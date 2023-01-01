@@ -1,10 +1,49 @@
 import time
+import subprocess
 from datetime import datetime, timedelta
 import tkinter as tk
 from PIL import ImageTk,Image
 import threading
+from threading import Thread
 from allmyfunctions import *
 import serial
+from itertools import count, cycle
+
+class ImageLabel(tk.Label):
+    """a label that displays images, and plays them if they are gifs"""
+    def load(self, im):
+        if isinstance(im, str):
+            im = Image.open(im).resize((700,480),Image.ANTIALIAS)
+        self.loc = 0
+        self.frames = []
+
+        try:
+            for i in count(1):
+                self.frames.append(ImageTk.PhotoImage(im.copy()))
+                im.seek(i)
+        except EOFError:
+            pass
+
+        try:
+            self.delay = 100
+        except:
+            self.delay = 10
+
+        if len(self.frames) == 1:
+            self.config(image=self.frames[0])
+        else:
+            self.next_frame()
+
+    def unload(self):
+        self.config(image="")
+        self.frames = None
+
+    def next_frame(self):
+        if self.frames:
+            self.loc += 1
+            self.loc %= len(self.frames)
+            self.config(image=self.frames[self.loc])
+            self.after(self.delay, self.next_frame)
 
 # for raspberry pi only, serial linakge to the relay
 usb = serial.Serial("/dev/ttyUSB0",9600)
@@ -14,16 +53,19 @@ turnOff = b'\xA0\x01\x00\xA1'
 
 root = tk.Tk()
 root.title('MM Exit')
-root.geometry("250x250")
+root.attributes("-fullscreen",True)
+root.configure(bg="black")
+root.bind("<Escape>",quit)
+#root.geometry("250x250")
 #get the 3 images
-defaultimg = ImageTk.PhotoImage(Image.open("img/blank.png").resize((175, 175), Image.ANTIALIAS))
-successimg = ImageTk.PhotoImage(Image.open("img/proceed.jpg").resize((175, 175), Image.ANTIALIAS))
-errorimg = ImageTk.PhotoImage(Image.open("img/red-stop.jpg").resize((175, 175), Image.ANTIALIAS))
+successimg = "gifs/SAFE Green.jpg"
+errorimg = "gifs/SAFE Red.jpg"
+justgif = "gifs/SAFE Screen.jpg"
 
 def openthegates():
     if usb.is_open:
         usb.write(turnOn)
-        time.sleep(1)
+        time.sleep(6)
         usb.write(turnOff)
         time.sleep(1)
 
@@ -36,38 +78,33 @@ def printInput(event):
     #run the delete function
     attempt = deleteFromJsonUsingInput(inp)
     if attempt == True:
-        resultlbl.config(text = 'Welcome ' + inp)
-        imglabel.config(image=successimg)
-        openthegates()
+        #imglabel.load(successimg)
+        #openthegates()
+        a = Thread(target = imglabel.load(successimg))
+        b = Thread(target = openthegates)
+        a.start()
+        b.start()
     else:
-        resultlbl.config(text = 'No entry found for ' + inp)
-        imglabel.config(image=errorimg)
+        imglabel.load(errorimg)
 
-    threading.Timer(3, clearFields).start()
+    threading.Timer(6, clearFields).start()
 
 def clearFields():
-    resultlbl.config(text = "")
-    imglabel.config(image=defaultimg)
+    imglabel.load(justgif)
     inputtxt.focus()
 
 #bind the enter key to the function
 root.bind('<Return>', printInput)
 
-#greeting to tell you which page you're on
-greeting = tk.Label(root, text = "Magic Mirror Exit")
-greeting.pack()
-
 #enter the card no here
 inputtxt = tk.Text(root,height = 1,width = 20)
 inputtxt.pack()
 inputtxt.focus()
-#message
-resultlbl = tk.Label(root, text = "")
-resultlbl.pack()
 
 #image
-imglabel = tk.Label(root, image=defaultimg)
+imglabel = ImageLabel(root)
 imglabel.pack()
+imglabel.load(justgif)
 
 root.mainloop()
 

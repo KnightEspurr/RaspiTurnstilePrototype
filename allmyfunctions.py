@@ -8,6 +8,7 @@ from paho.mqtt import client as mqtt_client
 import itertools as it
 import tkinter as tk
 from PIL import ImageTk,Image
+import os
 
 broker = 'broker.emqx.io'
 port = 1883
@@ -81,7 +82,7 @@ def subscribe(client: mqtt_client):
 
         dictionary = {
             "code": msg.payload.decode(),
-	    "timestamp": str(datetime.now())
+            "timestamp": str(datetime.now())
         }
         writeJson(dictionary)
 
@@ -90,17 +91,21 @@ def subscribe(client: mqtt_client):
 
 def writeJson(entry):
     with open(storage, 'r+') as file:
+    #with open(storage + "tmp.json", 'r+') as file:
         file_data = json.load(file)
         file_data.append(entry)
         file.seek(0)
         json.dump(file_data, file)
+    #os.rename(storage + "tmp.json",storage)
 
+#unused
 def readJson():
     with open(storage, 'r') as file:
         file_data = json.load(file)
         for x in range(len(file_data)):
             print(file_data[x]["code"])
 
+#unused
 def deleteFromJson():
     while True:
         insert = input()
@@ -127,9 +132,12 @@ def deleteFromJsonUsingInput(insert):
             print('Found ' + str(checkIfExists))
             if checkIfExists == 1:
                 filtered_data = [obj for obj in file_data if (obj['code'] != insert)]
-                with open(storage, 'w') as file:
+                with open(storage + "tmp", 'w') as file:
+                # with open(storage, 'w') as file:
                     json.dump(filtered_data, file)
-                    return(True)
+                    # return(True) #moved out
+                os.rename(storage + "tmp",storage)
+                return(True)
             elif checkIfExists == 0:
                 return(False)
 
@@ -151,6 +159,8 @@ def deleteExpiredRecords():
                 file_data = [obj for obj in file_data if (obj['code'] != codeobj)]
                 numdeleted += 1
 
-    with open(storage, 'w') as file:
+    # with open(storage, 'w') as file:
+    with open(storage + "tmp", 'w') as file:
         json.dump(file_data, file)
         print("Number of entries deleted: " + str(numdeleted)) #debug
+    os.rename(storage + "tmp",storage)
