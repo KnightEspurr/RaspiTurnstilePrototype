@@ -1,0 +1,27 @@
+please make sure that the RFID scanner and the usb relay
+are both connected to the bottom row of usb ports. 
+
+Typically I will connect the RFID scanner to the bottom-left USB port
+and the USB Relay on the bottom-right.
+
+Please also connect a USB mouse / keyboard-trackpad to any available USB port.
+
+To install the project, import the zip file into the raspberry pi
+and unzip its in this folder:
+/home/pi
+
+There will be a file called Turnstile, move or copy this file to the Desktop.
+You will need to click on this file to launch the program on the raspberry pi.
+If prompted, please click on "Execute in Terminal"
+
+The Turnstile file will launch two functions simultaneously (storage.py and exit.py)
+
+The entry.pi function can be run on any other computer currently on the same wireless network
+You will also need the allmyfunctions.pi file in the same folder in order for the file to work
+To run, either double-click, or right click and run, or use the command prompt
+
+To run the turnstile on raspberry pi, please make sure that the RFID reader and Relay are connected
+Then launch the program using the Turnstile file.
+
+To exit the turnstile program, press escape on a connected keyboard.
+You can just shut down the raspberry pi by powering off, but I would not recommend that.
